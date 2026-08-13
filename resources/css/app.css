@@ -3,33 +3,305 @@
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 @source '../**/*.blade.php';
-
-[x-cloak] { display: none !important; }
-
-@layer components {
-  .nav { @apply block rounded-lg px-3 py-2.5 text-sm font-medium transition hover:bg-white/10 hover:text-white; }
-  .nav-active { @apply bg-indigo-500 text-white hover:bg-indigo-500; }
-  .card { @apply rounded-xl border border-slate-200 bg-white p-6 shadow-sm; }
-  .btn-primary { @apply inline-flex items-center rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700; }
-  .btn-secondary { @apply inline-flex items-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50; }
-  .label { @apply text-xs font-medium uppercase tracking-wide text-slate-500; }
-  .metric { @apply mt-2 text-2xl font-bold tracking-tight text-slate-900; }
-  .section-title { @apply mb-5 text-base font-semibold text-slate-900; }
-  .field { @apply flex flex-col gap-1.5 text-sm font-medium text-slate-700; }
-  .field input, .field textarea, .field select { @apply w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-normal text-slate-800 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100; }
-  .table-input { @apply w-full rounded-md border border-slate-300 px-2.5 py-2 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100; }
-  .total-row { @apply flex items-center justify-between text-sm text-slate-600; }
-  .badge { @apply inline-flex rounded-full px-2.5 py-1 text-xs font-medium; }
-  .badge-paid { @apply bg-emerald-50 text-emerald-700; }
-  .badge-open { @apply bg-amber-50 text-amber-700; }
-}
-
-@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
-@source '../../storage/framework/views/*.php';
-@source '../**/*.blade.php';
 @source '../**/*.js';
 
+/*
+ * Runovia design tokens.
+ *
+ * ! Colours are declared here as named roles, not sprinkled through templates as
+ *   raw Tailwind shades. The previous app used `indigo-600` directly in ~40 places,
+ *   which meant a brand change was a find-and-replace that would also catch the
+ *   indigo used for focus rings and links. A role can be repointed once.
+ *
+ * ? Light only, deliberately. This is an internal tool used on office machines in
+ *   daylight, and a dark theme done badly — half-converted tables, unreadable
+ *   badges, an invoice preview that does not match its own PDF — is worse than none.
+ *   The tokens below are structured so a dark block could be added later without
+ *   touching a single template.
+ */
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+        'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+
+    --color-brand-50: oklch(0.962 0.018 272.314);
+    --color-brand-100: oklch(0.93 0.034 272.788);
+    --color-brand-500: oklch(0.585 0.233 277.117);
+    --color-brand-600: oklch(0.511 0.262 276.966);
+    --color-brand-700: oklch(0.457 0.24 277.023);
+    --color-brand-950: oklch(0.257 0.09 281.288);
+}
+
+[x-cloak] {
+    display: none !important;
+}
+
+/*
+ * ! Every interactive element gets a VISIBLE focus ring, and none of them get
+ *   `outline-none` without a replacement. Keyboard navigation through an invoice
+ *   form with 20 line inputs is unusable otherwise, and it is the single most
+ *   common accessibility regression in a Tailwind codebase.
+ */
+@layer base {
+    :focus-visible {
+        @apply outline-2 outline-offset-2 outline-brand-600;
+    }
+
+    body {
+        @apply bg-slate-50 text-slate-900 antialiased;
+    }
+
+    /* Numeric table cells line their digits up without needing the .tabular class. */
+    td.numeric,
+    th.numeric {
+        font-variant-numeric: tabular-nums;
+    }
+}
+
+/*
+ * ! THESE FOUR ARE @utility, NOT @layer components, and that is a Tailwind v4
+ *   requirement rather than a preference. `@apply` in v4 only accepts real
+ *   utilities — a class declared inside `@layer components` cannot be applied by
+ *   another rule, and trying fails the BUILD with "Cannot apply unknown utility
+ *   class". Every variant below (`btn-primary`, `badge-paid`, `alert-error`, the
+ *   metric values) is defined by composing one of these, so they have to be
+ *   utilities for that composition to compile at all.
+ */
+@utility btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold
+           transition disabled:cursor-not-allowed disabled:opacity-50;
+}
+
+@utility badge {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium;
+}
+
+@utility alert {
+    @apply flex items-start gap-3 rounded-lg border px-4 py-3 text-sm;
+}
+
+@utility tabular {
+    font-variant-numeric: tabular-nums;
+}
+
+@layer components {
+    /* ---------------------------------------------------------------- Shell */
+
+    .sidebar-link {
+        @apply flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-300
+               transition hover:bg-white/10 hover:text-white;
+    }
+
+    .sidebar-link-active {
+        @apply bg-brand-600 text-white shadow-sm hover:bg-brand-600 hover:text-white;
+    }
+
+    .sidebar-heading {
+        @apply px-3 pt-6 pb-2 text-[0.6875rem] font-semibold uppercase tracking-wider text-slate-500;
+    }
+
+    /* ---------------------------------------------------------------- Cards */
+
+    .card {
+        @apply rounded-xl border border-slate-200/80 bg-white shadow-sm;
+    }
+
+    .card-body {
+        @apply p-5 sm:p-6;
+    }
+
+    .card-header {
+        @apply flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/80 px-5 py-4 sm:px-6;
+    }
+
+    .card-title {
+        @apply text-base font-semibold tracking-tight text-slate-900;
+    }
+
+    .card-subtitle {
+        @apply mt-0.5 text-sm text-slate-500;
+    }
+
+    /* -------------------------------------------------------------- Buttons */
+
+    .btn-primary {
+        @apply btn bg-brand-600 text-white shadow-sm hover:bg-brand-700;
+    }
+
+    .btn-secondary {
+        @apply btn border border-slate-300 bg-white text-slate-700 shadow-sm hover:bg-slate-50;
+    }
+
+    .btn-danger {
+        @apply btn border border-rose-200 bg-white text-rose-700 shadow-sm hover:bg-rose-50;
+    }
+
+    .btn-ghost {
+        @apply btn px-3 text-slate-600 hover:bg-slate-100 hover:text-slate-900;
+    }
+
+    .btn-sm {
+        @apply px-3 py-1.5 text-xs;
+    }
+
+    /* ---------------------------------------------------------------- Forms */
+
+    .field {
+        @apply flex flex-col gap-1.5;
+    }
+
+    .field-label {
+        @apply text-sm font-medium text-slate-700;
+    }
+
+    .field-hint {
+        @apply text-xs text-slate-500;
+    }
+
+    .field-error {
+        @apply text-xs font-medium text-rose-600;
+    }
+
+    .input {
+        @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900
+               shadow-sm transition placeholder:text-slate-400
+               focus:border-brand-500 focus:ring-2 focus:ring-brand-100 focus:outline-none
+               disabled:bg-slate-50 disabled:text-slate-500;
+    }
+
+    /*
+     * ! aria-invalid drives the error styling, not a separate .input-error class.
+     *   That way the visual state and the state announced to a screen reader cannot
+     *   drift apart — there is only one attribute to set.
+     */
+    .input[aria-invalid='true'] {
+        @apply border-rose-400 focus:border-rose-500 focus:ring-rose-100;
+    }
+
+    .input-sm {
+        @apply rounded-md px-2.5 py-1.5 text-sm;
+    }
+
+    /* ---------------------------------------------------------------- Table */
+
+    .table-wrap {
+        @apply overflow-x-auto;
+    }
+
+    .table {
+        @apply w-full text-left text-sm;
+    }
+
+    .table thead th {
+        @apply whitespace-nowrap border-b border-slate-200 bg-slate-50/80 px-4 py-3
+               text-xs font-semibold uppercase tracking-wide text-slate-500;
+    }
+
+    .table tbody td {
+        @apply border-b border-slate-100 px-4 py-3 text-slate-700;
+    }
+
+    .table tbody tr:last-child td {
+        @apply border-b-0;
+    }
+
+    .table tbody tr:hover {
+        @apply bg-slate-50/60;
+    }
+
+    /* --------------------------------------------------------------- Badges */
+
+    /*
+     * ! One class per invoice status, all five of them. The old app had only
+     *   `badge-paid` and `badge-open` because its model had only two states; this
+     *   API distinguishes DRAFT, SENT, PARTIALLY_PAID, PAID and CANCELLED, and
+     *   collapsing them loses the distinction the user most needs on a list —
+     *   between "not sent yet" and "sent and unpaid".
+     */
+    .badge-draft {
+        @apply badge bg-slate-100 text-slate-600;
+    }
+
+    .badge-sent {
+        @apply badge bg-sky-50 text-sky-700;
+    }
+
+    .badge-partial {
+        @apply badge bg-amber-50 text-amber-700;
+    }
+
+    .badge-paid {
+        @apply badge bg-emerald-50 text-emerald-700;
+    }
+
+    .badge-cancelled {
+        @apply badge bg-rose-50 text-rose-700;
+    }
+
+    .badge-neutral {
+        @apply badge bg-slate-100 text-slate-600;
+    }
+
+    .badge-overdue {
+        @apply badge bg-rose-50 text-rose-700;
+    }
+
+    /* --------------------------------------------------------------- Metrics */
+
+    .metric-label {
+        @apply text-xs font-medium uppercase tracking-wide text-slate-500;
+    }
+
+    .metric-value {
+        @apply mt-2 text-2xl font-bold tracking-tight text-slate-900 tabular;
+    }
+
+    .metric-note {
+        @apply mt-1 text-xs text-slate-500;
+    }
+
+    /* ----------------------------------------------------------- Empty state */
+
+    .empty {
+        @apply flex flex-col items-center justify-center gap-3 px-6 py-14 text-center;
+    }
+
+    .empty-title {
+        @apply text-sm font-semibold text-slate-900;
+    }
+
+    .empty-text {
+        @apply max-w-sm text-sm text-slate-500;
+    }
+
+    /* ---------------------------------------------------------------- Alerts */
+
+    .alert-success {
+        @apply alert border-emerald-200 bg-emerald-50 text-emerald-800;
+    }
+
+    .alert-error {
+        @apply alert border-rose-200 bg-rose-50 text-rose-800;
+    }
+
+    .alert-info {
+        @apply alert border-sky-200 bg-sky-50 text-sky-800;
+    }
+
+    .alert-warning {
+        @apply alert border-amber-200 bg-amber-50 text-amber-800;
+    }
+
+    /* ------------------------------------------------------------ Page header */
+
+    .page-title {
+        @apply text-xl font-bold tracking-tight text-slate-900 sm:text-2xl;
+    }
+
+    .page-subtitle {
+        @apply mt-1 text-sm text-slate-500;
+    }
+
+    .section-title {
+        @apply text-sm font-semibold uppercase tracking-wide text-slate-500;
+    }
 }
